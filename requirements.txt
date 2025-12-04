@@ -1,0 +1,12 @@
+flask
+flask-sqlalchemy
+flask-marshmallow
+marshmallow-sqlalchemy
+langchain-community==0.3.22
+langchain-openai
+langchain-text-splitters
+langgraph
+faiss-cpu
+pypdf
+python-dotenv
+

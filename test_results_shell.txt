@@ -1,0 +1,104 @@
+=================================================================================
+TEST: GET / (Home)
+TIMESTAMP: 2025-12-04 11:17:32
+STATUS: PASS
+COMMAND: curl -s -X GET http://127.0.0.1:5000/
+RESPONSE:
+{"endpoints":{"DELETE /books/<id>":"Delete a book","GET /books":"Get all books","GET /books/<id>":"Get a single book","POST /books":"Add a new book","POST /llm/embed-pdfs":"Embed PDF files into a FAISS vector store","POST /llm/react-agent":"Run a LangGraph ReAct agent with a sample tool","POST /llm/retrieval-answer":"Retrieval QA chain over the vector store","POST /llm/simple-invoke":"Call an LLM with system & human messages","POST /llm/vector-search":"Search the FAISS vector store","PUT /books/<id>":"Update a book"},"message":"Welcome to the Book + LangChain API!"}
+
+=================================================================================
+TEST: GET /books (Initial state)
+TIMESTAMP: 2025-12-04 11:17:32
+STATUS: PASS
+COMMAND: curl -s -X GET http://127.0.0.1:5000/books
+RESPONSE:
+[{"author":"F. Scott Fitzgerald","id":1,"title":"The Great Gatsby","year":1926},{"author":"F. Scott Fitzgerald","id":2,"title":"The Great Gatsby","year":1925},{"author":"George Orwell","id":4,"title":"1984","year":null}]
+
+=================================================================================
+TEST: POST /books (Add test book)
+TIMESTAMP: 2025-12-04 11:17:33
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/books -H 'Content-Type: application/json' -d '{"title": "Shell Test Book", "author": "Shell Author", "year": 2024}'
+RESPONSE:
+{"author":"Shell Author","id":5,"title":"Shell Test Book","year":2024}
+
+=================================================================================
+TEST: GET /books/5 (Get test book)
+TIMESTAMP: 2025-12-04 11:17:34
+STATUS: PASS
+COMMAND: curl -s -X GET http://127.0.0.1:5000/books/5
+RESPONSE:
+{"author":"Shell Author","id":5,"title":"Shell Test Book","year":2024}
+
+=================================================================================
+TEST: PUT /books/5 (Update test book)
+TIMESTAMP: 2025-12-04 11:17:34
+STATUS: PASS
+COMMAND: curl -s -X PUT http://127.0.0.1:5000/books/5 -H 'Content-Type: application/json' -d '{"title": "Updated Shell Test Book", "author": "Shell Author", "year": 2025}'
+RESPONSE:
+{"author":"Shell Author","id":5,"title":"Updated Shell Test Book","year":2025}
+
+=================================================================================
+TEST: POST /llm/simple-invoke
+TIMESTAMP: 2025-12-04 11:17:35
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/simple-invoke -H 'Content-Type: application/json' -d '{"message": "Hello from shell script!"}'
+RESPONSE:
+{"response":"Hello! How can I assist you with your shell script?"}
+
+=================================================================================
+TEST: POST /llm/embed-pdfs
+TIMESTAMP: 2025-12-04 11:17:37
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/embed-pdfs -H 'Content-Type: application/json' -d '{"paths": ["sample.pdf"]}'
+RESPONSE:
+{"embedding_model":"text-embedding-3-small","indexed_chunks":1,"paths":["sample.pdf"],"total_chunks":5}
+
+=================================================================================
+TEST: POST /llm/vector-search
+TIMESTAMP: 2025-12-04 11:17:38
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/vector-search -H 'Content-Type: application/json' -d '{"query": "Flask API"}'
+RESPONSE:
+{"results":[{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}},{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}},{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}},{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}}]}
+
+=================================================================================
+TEST: POST /llm/retrieval-answer
+TIMESTAMP: 2025-12-04 11:17:40
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/retrieval-answer -H 'Content-Type: application/json' -d '{"question": "What features are mentioned?"}'
+RESPONSE:
+{"answer":"The features mentioned are:\n- Flask API endpoints\n- LangChain integration\n- Vector embeddings\n- Book management system","context":[{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}},{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}},{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}},{"content":"Sample PDF Document\nThis is a test document for API testing.\nFeatures:\n\u007f Flask API endpoints\n\u007f LangChain integration\n\u007f Vector embeddings\n\u007f Book management system\nThis document contains multiple paragraphs to test\ntext chunking and embedding functionality.\nThe system should be able to process this content\nand make it searchable through vector similarity.","metadata":{"author":"anonymous","creationdate":"2025-12-04T11:11:07+00:00","creator":"ReportLab PDF Library - www.reportlab.com","keywords":"","moddate":"2025-12-04T11:11:07+00:00","page":0,"page_label":"1","producer":"ReportLab PDF Library - www.reportlab.com","source":"sample.pdf","subject":"unspecified","title":"untitled","total_pages":1,"trapped":"/False"}}]}
+
+=================================================================================
+TEST: POST /llm/react-agent
+TIMESTAMP: 2025-12-04 11:17:43
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/react-agent -H 'Content-Type: application/json' -d '{"message": "Count words in: Hello world shell test"}'
+RESPONSE:
+{"response":"The text \"Hello world shell test\" contains 4 words.","tool_events":[{"content":"Characters: 22, Words: 4","tool":"text_stats"}]}
+
+=================================================================================
+TEST: DELETE /books/5 (Cleanup)
+TIMESTAMP: 2025-12-04 11:17:43
+STATUS: PASS
+COMMAND: curl -s -X DELETE http://127.0.0.1:5000/books/5
+RESPONSE:
+{"message":"Book \"Updated Shell Test Book\" deleted successfully"}
+
+=================================================================================
+TEST: POST /llm/simple-invoke (Error case)
+TIMESTAMP: 2025-12-04 11:17:43
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/simple-invoke -H 'Content-Type: application/json' -d '{}'
+RESPONSE:
+{"error":"message is required"}
+
+=================================================================================
+TEST: POST /llm/embed-pdfs (Error case)
+TIMESTAMP: 2025-12-04 11:17:44
+STATUS: PASS
+COMMAND: curl -s -X POST http://127.0.0.1:5000/llm/embed-pdfs -H 'Content-Type: application/json' -d '{}'
+RESPONSE:
+{"error":"paths (list of PDF files) is required"}
+
