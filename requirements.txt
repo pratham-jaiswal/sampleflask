@@ -10,3 +10,4 @@ faiss-cpu
 pypdf
 python-dotenv
 
+langchain-classic

@@ -8,8 +8,10 @@ from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.retrieval import create_retrieval_chain
+from langchain_classic.chains import (
+    create_retrieval_chain,
+    create_stuff_documents_chain
+)
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -323,6 +325,7 @@ def react_agent():
     """Run a LangGraph ReAct agent that can call a sample tool."""
     payload = request.get_json(silent=True) or {}
     user_message = payload.get('message')
+    chat_history = payload.get('chat_history', [])
     system_prompt = payload.get(
         'system',
         'You are a thoughtful assistant. Decide when to use tools.'
@@ -339,10 +342,8 @@ def react_agent():
             tools=AGENT_TOOLS,
             prompt=system_prompt
         )
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_message)
-        ]
+        messages = chat_history
+        messages.append(("user",user_message))
         agent_result = agent_app.invoke({'messages': messages})
         final_message = agent_result['messages'][-1].content
         tool_events = [
@@ -358,8 +359,9 @@ def react_agent():
     except Exception as exc:  # pragma: no cover - depends on external service
         return jsonify({'error': f'Agent execution failed: {exc}'}), 500
 
+    messages.append(("ai",final_message))
     return jsonify({
-        'response': final_message,
+        'messages': messages,
         'tool_events': tool_events
     })
 
