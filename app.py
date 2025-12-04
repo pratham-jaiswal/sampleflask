@@ -5,13 +5,8 @@ import os
 from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, List, Optional
-
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
-from langchain_classic.chains import (
-    create_retrieval_chain,
-    create_stuff_documents_chain
-)
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -99,17 +94,6 @@ def vector_store_size(store: FAISS) -> int:
     """Return how many chunks are currently stored."""
     return len(getattr(store.docstore, '_dict', {}))
 
-
-@tool
-def text_stats(text: str) -> str:
-    """Return quick statistics about the supplied text snippet."""
-    words = len(text.split())
-    return f'Characters: {len(text)}, Words: {words}'
-
-
-AGENT_TOOLS = [text_stats]
-
-
 # ============ ROUTES ============
 
 @app.route('/')
@@ -126,8 +110,7 @@ def home():
             'POST /llm/simple-invoke': 'Call an LLM with system & human messages',
             'POST /llm/embed-pdfs': 'Embed PDF files into a FAISS vector store',
             'POST /llm/vector-search': 'Search the FAISS vector store',
-            'POST /llm/retrieval-answer': 'Retrieval QA chain over the vector store',
-            'POST /llm/react-agent': 'Run a LangGraph ReAct agent with a sample tool'
+            'POST /llm/react-agent': 'Run a LangGraph ReAct agent with a vector search tool - Agentic RAG'
         }
     })
 
@@ -260,6 +243,24 @@ def embed_pdfs():
     })
 
 
+def vector_search_tool(query: str, top_k: int = 4) -> List[Dict[str, Any]]:
+    """
+    Run a similarity search over the FAISS vector store.
+    Use this tool to search the vector store for relevant documents.
+
+    Args:
+        query: The query to search for.
+        top_k: The number of results to return. (default: 4)
+
+    Returns:
+        A list of dictionaries, each containing the content and metadata of a relevant document.
+
+    """ 
+    docs = VECTOR_STORE.similarity_search(query, k=top_k)
+    results = [{'content': doc.page_content, 'metadata': doc.metadata} for doc in docs]
+    return jsonify({'results': results})
+
+
 @app.route('/llm/vector-search', methods=['POST'])
 def vector_search():
     """Run a similarity search over the FAISS vector store."""
@@ -273,52 +274,7 @@ def vector_search():
     if VECTOR_STORE is None:
         return jsonify({'error': 'Vector store empty. Call /llm/embed-pdfs first.'}), 400
 
-    docs = VECTOR_STORE.similarity_search(query, k=top_k)
-    results = [{'content': doc.page_content, 'metadata': doc.metadata} for doc in docs]
-    return jsonify({'results': results})
-
-
-@app.route('/llm/retrieval-answer', methods=['POST'])
-def retrieval_answer():
-    """Answer a question using retrieval augmented generation."""
-    payload = request.get_json(silent=True) or {}
-    question = payload.get('question')
-    system_prompt = payload.get(
-        'system',
-        'You are a domain expert. Use only the provided context to answer.'
-    )
-    top_k = int(payload.get('k', 4))
-    temperature = float(payload.get('temperature', 0.1))
-
-    if not question:
-        return jsonify({'error': 'question is required'}), 400
-    if VECTOR_STORE is None:
-        return jsonify({'error': 'Vector store empty. Call /llm/embed-pdfs first.'}), 400
-
-    try:
-        llm = build_chat_llm(temperature=temperature)
-    except RuntimeError as err:
-        return jsonify({'error': str(err)}), 500
-
-    retriever = VECTOR_STORE.as_retriever(search_kwargs={'k': top_k})
-    prompt = ChatPromptTemplate.from_messages([
-        ('system', '{system_prompt}\n\nContext:\n{context}'),
-        ('human', '{input}')
-    ])
-    doc_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(retriever, doc_chain)
-    result: Dict[str, Any] = rag_chain.invoke({'input': question, 'system_prompt': system_prompt})
-
-    context_payload = [
-        {'content': doc.page_content, 'metadata': doc.metadata}
-        for doc in result.get('context', [])
-    ]
-
-    return jsonify({
-        'answer': result.get('answer'),
-        'context': context_payload
-    })
-
+    return vector_search_tool(query, top_k)
 
 @app.route('/llm/react-agent', methods=['POST'])
 def react_agent():
@@ -339,7 +295,7 @@ def react_agent():
         llm = build_chat_llm(temperature=temperature)
         agent_app = create_react_agent(
             model=llm,
-            tools=AGENT_TOOLS,
+            tools=[vector_search_tool],
             prompt=system_prompt
         )
         messages = chat_history
@@ -369,4 +325,3 @@ def react_agent():
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
-
